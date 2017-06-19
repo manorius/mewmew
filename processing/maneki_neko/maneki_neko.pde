@@ -54,26 +54,26 @@ void draw()
     }
     
     // DETECT BODY ROTATION
-    float shoulderL = bodies.get(i).skeletonPositions[Kinect.NUI_SKELETON_POSITION_HIP_LEFT].x;
-    float shoulderR = bodies.get(i).skeletonPositions[Kinect.NUI_SKELETON_POSITION_HIP_RIGHT].x;
+    float hipL = bodies.get(i).skeletonPositions[Kinect.NUI_SKELETON_POSITION_HIP_LEFT].x;
+    float hipR = bodies.get(i).skeletonPositions[Kinect.NUI_SKELETON_POSITION_HIP_RIGHT].x;
     float spine =  bodies.get(i).skeletonPositions[Kinect.NUI_SKELETON_POSITION_SPINE].x;
     float wristR = bodies.get(i).skeletonPositions[Kinect.NUI_SKELETON_POSITION_WRIST_RIGHT].x;
     float wristL = bodies.get(i).skeletonPositions[Kinect.NUI_SKELETON_POSITION_WRIST_LEFT].x;
     float head = bodies.get(i).skeletonPositions[Kinect.NUI_SKELETON_POSITION_HEAD].x;
     
-    if(shoulderL<wristL)
+    if(hipL<wristL)
     {
       println("turning right");
       servos[1] = 180;
     }
     
-    if(shoulderR>wristR)
+    if(hipR>wristR)
     {
       println("turning left");
       servos[1] = 0;
     }
     
-    if(shoulderL>wristL && shoulderR<wristR)
+    if(hipL>wristL && hipR<wristR)
     {
       println("goto center");
       servos[1] = 90;
