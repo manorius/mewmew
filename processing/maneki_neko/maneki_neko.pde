@@ -1,10 +1,13 @@
+
 import kinect4WinSDK.Kinect;
 import kinect4WinSDK.SkeletonData;
+
 // import UDP library
 import hypermedia.net.*;
 
 Kinect kinect;
 ArrayList <SkeletonData> bodies;
+
 UDP udp;  // define the UDP object
 String[] ip = new String[4];
 float[] servos = new float[2];
@@ -18,60 +21,67 @@ void setup()
   bodies = new ArrayList<SkeletonData>();
   udp = new UDP( this, 6000 );
   udp.listen( true );
+  
+  // ARRAY HOLDING THE IP ADDRESSES OF THE REDBEARS (CATS)
   ip[0] = "192.168.1.100";
   ip[1] = "192.168.1.103";
-  ip[2] = "192.168.1.102";
-  ip[3] = "192.168.1.101";
+  ip[2] = "192.168.1.104";
+  ip[4] = "192.168.1.105";
   
 }
 
 void draw()
 {
+  
   background(0);
   image(kinect.GetImage(), 320, 0, 320, 240);
   image(kinect.GetDepth(), 320, 240, 320, 240);
   image(kinect.GetMask(), 0, 240, 320, 240);
+  
   for (int i=0; i<bodies.size (); i++) 
   {
     drawSkeleton(bodies.get(i));
     drawPosition(bodies.get(i));
-    //println(bodies.get(i).skeletonPositionTrackingState[Kinect.NUI_SKELETON_POSITION_WRIST_RIGHT]);
+   
     // DETECT ARM MOTION
     if(bodies.get(i).skeletonPositionTrackingState[Kinect.NUI_SKELETON_POSITION_WRIST_RIGHT]!= 0)
-  {
+    {
       float shoulderC = bodies.get(i).skeletonPositions[Kinect.NUI_SKELETON_POSITION_SHOULDER_CENTER].y;
-    float high = bodies.get(i).skeletonPositions[Kinect.NUI_SKELETON_POSITION_HIP_RIGHT].y;
-    float w = bodies.get(i).skeletonPositions[Kinect.NUI_SKELETON_POSITION_WRIST_RIGHT].y;
-    servos[0] = Math.max(Math.min(((w-shoulderC)*100)/(high-shoulderC),100),0);
-    //println(servos[0]);
+      float high = bodies.get(i).skeletonPositions[Kinect.NUI_SKELETON_POSITION_HIP_RIGHT].y;
+      float w = bodies.get(i).skeletonPositions[Kinect.NUI_SKELETON_POSITION_WRIST_RIGHT].y;
+      servos[0] = Math.max(Math.min(((w-shoulderC)*100)/(high-shoulderC),100),0);
+    
+    }
+    
+    // DETECT BODY ROTATION
+    float shoulderL = bodies.get(i).skeletonPositions[Kinect.NUI_SKELETON_POSITION_HIP_LEFT].x;
+    float shoulderR = bodies.get(i).skeletonPositions[Kinect.NUI_SKELETON_POSITION_HIP_RIGHT].x;
+    float spine =  bodies.get(i).skeletonPositions[Kinect.NUI_SKELETON_POSITION_SPINE].x;
+    float wristR = bodies.get(i).skeletonPositions[Kinect.NUI_SKELETON_POSITION_WRIST_RIGHT].x;
+    float wristL = bodies.get(i).skeletonPositions[Kinect.NUI_SKELETON_POSITION_WRIST_LEFT].x;
+    float head = bodies.get(i).skeletonPositions[Kinect.NUI_SKELETON_POSITION_HEAD].x;
+    
+    if(shoulderL<wristL)
+    {
+      println("turning right");
+      servos[1] = 180;
+    }
+    
+    if(shoulderR>wristR)
+    {
+      println("turning left");
+      servos[1] = 0;
+    }
+    
+    if(shoulderL>wristL && shoulderR<wristR)
+    {
+      println("goto center");
+      servos[1] = 90;
+    }
+    
+    println(servos[1]);
   }
-  // DETECT BODY ROTATION
-  float shoulderL = bodies.get(i).skeletonPositions[Kinect.NUI_SKELETON_POSITION_HIP_LEFT].x;
-  float shoulderR = bodies.get(i).skeletonPositions[Kinect.NUI_SKELETON_POSITION_HIP_RIGHT].x;
-  float spine =  bodies.get(i).skeletonPositions[Kinect.NUI_SKELETON_POSITION_SPINE].x;
-  float wristR = bodies.get(i).skeletonPositions[Kinect.NUI_SKELETON_POSITION_WRIST_RIGHT].x;
-  float wristL = bodies.get(i).skeletonPositions[Kinect.NUI_SKELETON_POSITION_WRIST_LEFT].x;
-  float head = bodies.get(i).skeletonPositions[Kinect.NUI_SKELETON_POSITION_HEAD].x;
- 
- if(shoulderL<wristL)
- {
-   println("turning right");
-   
-    servos[1] = 180;
- }
- if(shoulderR>wristR)
- {
-   
-   println("turning left");
-   servos[1] = 0;
- }
- if(shoulderL>wristL && shoulderR<wristR)
- {
-  println("goto center");
-  servos[1] = 90;
-  }
-  println(servos[1]);
-  }
+  
   // SEND DATA
   sendData();
 }
@@ -167,12 +177,14 @@ void DrawBone(SkeletonData _s, int _j1, int _j2)
 {
   noFill();
   stroke(255, 255, 0);
+  
   if(_j2==Kinect.NUI_SKELETON_POSITION_WRIST_LEFT)
   {
    // println(_s.skeletonPositions[_j2].y);
   }
-  if (_s.skeletonPositionTrackingState[_j1] != Kinect.NUI_SKELETON_POSITION_NOT_TRACKED &&
-    _s.skeletonPositionTrackingState[_j2] != Kinect.NUI_SKELETON_POSITION_NOT_TRACKED) {
+  
+  if (_s.skeletonPositionTrackingState[_j1] != Kinect.NUI_SKELETON_POSITION_NOT_TRACKED &&_s.skeletonPositionTrackingState[_j2] != Kinect.NUI_SKELETON_POSITION_NOT_TRACKED) 
+  {
     line(_s.skeletonPositions[_j1].x*width/2, 
     _s.skeletonPositions[_j1].y*height/2, 
     _s.skeletonPositions[_j2].x*width/2, 
@@ -182,11 +194,14 @@ void DrawBone(SkeletonData _s, int _j1, int _j2)
 
 void appearEvent(SkeletonData _s) 
 {
+  
   if (_s.trackingState == Kinect.NUI_SKELETON_NOT_TRACKED) 
   {
     return;
   }
-  synchronized(bodies) {
+  
+  synchronized(bodies) 
+  {
     bodies.add(_s);
   }
 }
@@ -210,6 +225,7 @@ void moveEvent(SkeletonData _b, SkeletonData _a)
   {
     return;
   }
+  
   synchronized(bodies) {
     for (int i=bodies.size ()-1; i>=0; i--) 
     {
@@ -221,19 +237,18 @@ void moveEvent(SkeletonData _b, SkeletonData _a)
     }
   }
 }
-void sendData(){
-    int port        = 8888;    // the destination port
-    
-    // formats the message for Pd
-    String message1 = constrain(round(map( servos[0],0,100,0,180)),0,180)+"";
-    String message2 = Float.toString(servos[1]);
-    println(message2);
-    // send the message
-    for(int k=0;k<ip.length;k++)
-    {
-      udp.send( message1+","+message2, ip[k], port );
-    }
-    
- //udp.send( message2, ip2, port );
 
+void sendData(){
+
+   int port        = 8888;    // the destination port
+    
+   // PREPARING MESSAGE FOR PD
+   String message1 = constrain(round(map( servos[0],0,100,0,180)),0,180)+"";
+   String message2 = Float.toString(servos[1]);
+   
+   // SEND MESSAGE TO REDBEAR
+   for(int k=0;k<ip.length;k++)
+   {
+     udp.send( message1+","+message2, ip[k], port );
+   }
 }
